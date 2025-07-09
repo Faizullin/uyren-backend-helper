@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: uyren_helper_postgres_prod
+    env_file:
+      - ./.env.prod    
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - uyren_helper_postgres_data:/var/lib/postgresql/data
+    networks:
+      - uyren_helper_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  code-execution-service:
+    build:
+      context: ./code-execution-service
+      dockerfile: Dockerfile.prod
+    container_name: uyren_helper_code_execution_prod
+    env_file:
+      - ./.env.prod
+    ports:
+      - "${CODE_EXECUTION_PORT:-8001}:8001"
+    volumes:
+      - ./code-execution-service/content-ml-helper:/app/content-ml-helper
+    depends_on:
+      - redis
+    networks:
+      - uyren_helper_network
+    restart: unless-stopped
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+  redis:
+    image: redis:7-alpine
+    container_name: uyren_helper_redis_prod
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - uyren_helper_redis_data:/data
+    networks:
+      - uyren_helper_network
+    restart: unless-stopped
+
+volumes:
+  uyren_helper_postgres_data:
+  uyren_helper_redis_data:
+
+networks:
+  uyren_helper_network:
+    driver: bridge
