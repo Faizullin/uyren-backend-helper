@@ -31,6 +31,9 @@ app = FastAPI(
     description="Stateless microservice for code execution with Firebase authentication",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url="/docs" if settings.debug else None,  # Disable docs in production
+    redoc_url="/redoc" if settings.debug else None,  # Disable redoc in production
+    openapi_url="/openapi.json" if settings.debug else None,  # Disable OpenAPI schema in production
 )
 
 # CORS middleware

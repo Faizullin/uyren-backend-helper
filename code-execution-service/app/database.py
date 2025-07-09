@@ -100,7 +100,54 @@ class RedisManager:
         except Exception as e:
             print(f"WebSocket get error: {e}")
             return None
-
+    
+    async def list_all_executions(self, limit: int = 100) -> list[Dict[str, Any]]:
+        """List all executions stored in Redis"""
+        try:
+            redis_client = await self.get_redis()
+            
+            # Get all execution keys
+            keys = await redis_client.keys("execution:*")
+            
+            # Limit the results
+            if len(keys) > limit:
+                keys = keys[:limit]
+            
+            executions = []
+            for key in keys:
+                data = await redis_client.get(key)
+                if data:
+                    try:
+                        execution_data = json.loads(data)
+                        executions.append(execution_data)
+                    except json.JSONDecodeError:
+                        print(f"Failed to decode execution data for key: {key}")
+                        continue
+            
+            # Sort by created_at (newest first)
+            executions.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+            
+            return executions
+        except Exception as e:
+            print(f"List executions error: {e}")
+            return []
+    
+    async def list_executions_by_user(self, user_id: str, limit: int = 50) -> list[Dict[str, Any]]:
+        """List executions for a specific user"""
+        try:
+            all_executions = await self.list_all_executions(limit * 2)  # Get more to filter
+            
+            # Filter by user_id
+            user_executions = [
+                execution for execution in all_executions 
+                if execution.get("user_id") == user_id
+            ]
+            
+            # Limit results
+            return user_executions[:limit]
+        except Exception as e:
+            print(f"List user executions error: {e}")
+            return []
 
 # Global Redis manager instance
 redis_manager = RedisManager()

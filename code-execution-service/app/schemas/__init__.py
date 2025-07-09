@@ -32,6 +32,40 @@ class ExecutionStatusResponse(BaseModel):
     completed_at: Optional[str] = None
 
 
+class ImmediateExecutionResponse(BaseModel):
+    execution_id: str
+    status: str  # completed, error, timeout
+    output: Optional[str] = None
+    error_output: Optional[str] = None
+    execution_time: Optional[str] = None
+    memory_usage: Optional[str] = None
+    message: str
+
+
+class ExecutionListResponse(BaseModel):
+    executions: list[ExecutionStatusResponse]
+    total_count: int
+    limit: int
+
+
+class ExecutionSummary(BaseModel):
+    execution_id: str
+    user_id: str
+    language: str
+    status: str
+    created_at: str
+    completed_at: Optional[str] = None
+    execution_time: Optional[str] = None
+    has_output: bool
+    has_error: bool
+
+
+class ExecutionListSummaryResponse(BaseModel):
+    executions: list[ExecutionSummary]
+    total_count: int
+    limit: int
+
+
 # WebSocket message schemas
 class WebSocketMessage(BaseModel):
     type: str  # execution_update, broadcast, error
